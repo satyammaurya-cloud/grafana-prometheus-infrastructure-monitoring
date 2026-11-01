@@ -75,7 +75,7 @@ sudo install -o root -g root -m 0755 node_exporter-1.9.1.linux-amd64/node_export
 sudo vi /etc/systemd/system/node_exporter.service
 ```
 Add this configuration:
-```bash
+```ini
 [Unit]
 Description=Prometheus Node Exporter
 Wants=network-online.target
@@ -271,7 +271,7 @@ sudo systemctl status node_exporter --no-pager
 curl http://<VM-private-ip>:9100/metrics
 ```
 
-> **Why `0.0.0.0` here?** The frontend VM must reach this exporter over the network. The NSG rule from Section 2 limits access to `10.0.2.4/32`. For extra protection, you can bind to the private IP instead: `--web.listen-address=10.0.4.4:9100`.
+==
 
 ## 6. Test Private Connectivity
 
