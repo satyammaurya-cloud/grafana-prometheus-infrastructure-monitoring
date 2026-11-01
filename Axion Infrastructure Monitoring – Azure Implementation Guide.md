@@ -140,7 +140,7 @@ sudo chmod 755 /etc/prometheus
 Prometheus needs to know what to monitor. Three jobs are configured: Prometheus itself, the frontend exporter and the backend exporter.
 
 ```bash
-sudo nano /etc/prometheus/prometheus.yml
+sudo vi /etc/prometheus/prometheus.yml
 ```
 
 ```yaml
@@ -168,7 +168,7 @@ scrape_configs:
 ### 4.3 Create the systemd service
 
 ```bash
-sudo nano /etc/systemd/system/prometheus.service
+sudo vi /etc/systemd/system/prometheus.service
 ```
 
 ```ini
@@ -233,13 +233,13 @@ tar -xvf node_exporter-1.9.1.linux-amd64.tar.gz
 sudo install -o root -g root -m 0755 node_exporter-1.9.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
 
 # Create systemd service
-sudo nano /etc/systemd/system/node_exporter.service
+sudo vi /etc/systemd/system/node_exporter.service
 ```
 
 ### 5.2 Create the systemd service
 
 ```bash
-sudo nano /etc/systemd/system/node_exporter.service
+sudo vi /etc/systemd/system/node_exporter.service
 ```
 
 ```ini
@@ -270,8 +270,6 @@ sudo systemctl status node_exporter --no-pager
 # Verify metrics
 curl http://<VM-private-ip>:9100/metrics
 ```
-
-==
 
 ## 6. Test Private Connectivity
 
@@ -390,21 +388,7 @@ sudo journalctl -u grafana-server -n 50 --no-pager
 sudo journalctl -u node_exporter -n 50 --no-pager
 ```
 
-## 10. Final Verification Checklist
-
-- [ ] Frontend Node Exporter is running and bound to `127.0.0.1:9100`.
-- [ ] Prometheus is running on the frontend VM.
-- [ ] Backend Node Exporter is running.
-- [ ] Backend NSG allows TCP `9100` only from `10.0.2.4/32`.
-- [ ] Frontend VM can retrieve backend metrics from `10.0.4.4:9100`.
-- [ ] Prometheus configuration passes `promtool check config`.
-- [ ] Grafana service is running.
-- [ ] Grafana's Prometheus data source passes **Save & Test**.
-- [ ] Both frontend and backend targets show `UP`.
-- [ ] Grafana dashboard displays metrics from both VMs.
-- [ ] Grafana's default administrator password has been changed.
-
-## 11. Production Notes
+## 1o. Production Notes
 
 - Keep port `9100` private; never expose it to the Internet.
 - Restrict Grafana and Prometheus UI access to a trusted IP range, VPN or private access path.
