@@ -15,7 +15,8 @@ This guide sets up monitoring for the Linux infrastructure that runs the Axion a
 | Frontend VM | `10.0.2.4` | React/Nginx, Prometheus, Grafana, Node Exporter |
 | Backend VM | `10.0.4.4` | FastAPI, Node Exporter |
 
-&#91;embedded content: monitoring architecture · 2 VMs, 3 services\]
+<img width="678" height="318" alt="image" src="https://github.com/user-attachments/assets/baad83c9-954a-4f70-8bd6-d7bb71a141d4" />
+
 
 Prometheus on the frontend VM scrapes both exporters every 15 seconds, and Grafana only ever talks to Prometheus.
 
