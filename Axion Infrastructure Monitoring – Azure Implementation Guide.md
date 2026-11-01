@@ -70,11 +70,11 @@ tar -xvf node_exporter-1.9.1.linux-amd64.tar.gz
 sudo install -o root -g root -m 0755 node_exporter-1.9.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
 ```
 
-# Create systemd service
+**Create systemd service**
 ```
 sudo vi /etc/systemd/system/node_exporter.service
 ```
-
+Add this configuration:
 ```bash
 [Unit]
 Description=Prometheus Node Exporter
@@ -90,26 +90,22 @@ Restart=always
 RestartSec=5
 
 [Install]
-WantedBy=multi-user.target-web.listen-address=127.0.0.1:9100"
+WantedBy=multi-user.target
 ```
 
-**Step 3.3: Enable, restart and verify**
+**Step 3.2: Enable, restart and verify**
 
 ```bash
-# Start at boot and apply the new configuration
-sudo systemctl enable prometheus-node-exporter
-sudo systemctl restart prometheus-node-exporter
+sudo systemctl daemon-reload
+sudo systemctl enable --now node_exporter
+sudo systemctl status node_exporter --no-pager
 
-# Confirm the service is running
-sudo systemctl status prometheus-node-exporter --no-pager
-
-# Confirm the metrics endpoint responds
-curl http://127.0.0.1:9100/metrics
+# Verify metrics
+curl http://<VM-private-ip>:9100/metrics
 ```
 
 **Expected result:** metric names such as `node_cpu_seconds_total`, `node_memory_MemTotal_bytes` and `node_filesystem_size_bytes`.
 
-> **Why localhost?** Prometheus runs on the same VM, so this exporter does not need to be reachable from the network.
 
 ## 4. Frontend VM: Install Prometheus
 
@@ -158,12 +154,12 @@ scrape_configs:
     static_configs:
       - targets: ["127.0.0.1:9090"]
 
-  # Frontend VM (local exporter)
+  # Frontend VM
   - job_name: "frontend-node"
     static_configs:
-      - targets: ["127.0.0.1:9100"]
+      - targets: ["10.0.2.4:9100"]
 
-  # Backend VM (private IP)
+  # Backend VM
   - job_name: "backend-node"
     static_configs:
       - targets: ["10.0.4.4:9100"]
@@ -208,7 +204,7 @@ sudo systemctl enable --now prometheus
 
 # Check status and health
 sudo systemctl status prometheus --no-pager
-curl http://127.0.0.1:9090/-/healthy
+curl http://<VM-private-ip>:9090/-/healthy
 ```
 
 | Check | Expected output |
@@ -225,17 +221,19 @@ curl http://127.0.0.1:9090/-/healthy
 ### 5.1 Download and install
 
 ```bash
-# Create a dedicated, non-login service account
-id node_exporter || sudo useradd --no-create-home --shell /usr/sbin/nologin node_exporter
+# Create dedicated service account
+id node_exporter || sudo useradd --system --no-create-home --shell /usr/sbin/nologin node_exporter
 
-# Download and extract Node Exporter 1.9.1
+# Download and extract Node Exporter
 cd /tmp
 wget https://github.com/prometheus/node_exporter/releases/download/v1.9.1/node_exporter-1.9.1.linux-amd64.tar.gz
 tar -xvf node_exporter-1.9.1.linux-amd64.tar.gz
 
-# Install the binary and set ownership
-sudo cp node_exporter-1.9.1.linux-amd64/node_exporter /usr/local/bin/
-sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
+# Install binary
+sudo install -o root -g root -m 0755 node_exporter-1.9.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
+
+# Create systemd service
+sudo nano /etc/systemd/system/node_exporter.service
 ```
 
 ### 5.2 Create the systemd service
@@ -254,7 +252,7 @@ After=network-online.target
 User=node_exporter
 Group=node_exporter
 Type=simple
-ExecStart=/usr/local/bin/node_exporter --web.listen-address=0.0.0.0:9100
+ExecStart=/usr/local/bin/node_exporter
 Restart=always
 RestartSec=5
 
@@ -267,9 +265,10 @@ WantedBy=multi-user.target
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now node_exporter
-
 sudo systemctl status node_exporter --no-pager
-curl http://127.0.0.1:9100/metrics
+
+# Verify metrics
+curl http://<VM-private-ip>:9100/metrics
 ```
 
 > **Why `0.0.0.0` here?** The frontend VM must reach this exporter over the network. The NSG rule from Section 2 limits access to `10.0.2.4/32`. For extra protection, you can bind to the private IP instead: `--web.listen-address=10.0.4.4:9100`.
