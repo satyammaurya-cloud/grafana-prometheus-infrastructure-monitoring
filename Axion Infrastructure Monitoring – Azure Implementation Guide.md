@@ -51,28 +51,6 @@ Before you start, confirm that both VMs are running, you have `sudo` access on e
 | `9100` | Node Exporter | Monitoring traffic only. **Never public.** |
 | `8000` | FastAPI | As required by the application |
 
-### Backend VM: NSG inbound rule
-
-Create this rule on the **Backend VM's Network Security Group** so Prometheus can scrape the backend exporter:
-
-| Setting | Value |
-| --- | --- |
-| Source | IP Addresses |
-| Source IP | `10.0.2.4/32` |
-| Source port | `*` |
-| Destination | Any |
-| Service | Custom |
-| Destination port | `9100` |
-| Protocol | TCP |
-| Action | Allow |
-| Name | `Allow-NodeExporter-From-Frontend` |
-
-> **Warning:** Never allow port `9100` from `Any` or the Internet.
-
-### Frontend VM: NSG inbound rules
-
-To reach Grafana (and optionally Prometheus) from your browser, add inbound rules on the **Frontend VM's NSG** for TCP `3000` (and `9090` if needed). Set the source to your own public IP address (`/32`) or your VPN range, never `Any`.
-
 ## 3. Frontend VM: Install Node Exporter
 
 **Objective:** Collect CPU, memory, disk and network metrics from the frontend VM.
@@ -80,17 +58,39 @@ To reach Grafana (and optionally Prometheus) from your browser, add inbound rule
 **Step 3.1: Install the package and open the defaults file**
 
 ```bash
-sudo apt update
-sudo apt install -y prometheus-node-exporter
-sudo nano /etc/default/prometheus-node-exporter
+# Create dedicated service account
+id node_exporter || sudo useradd --system --no-create-home --shell /usr/sbin/nologin node_exporter
+
+# Download and extract Node Exporter
+cd /tmp
+wget https://github.com/prometheus/node_exporter/releases/download/v1.9.1/node_exporter-1.9.1.linux-amd64.tar.gz
+tar -xvf node_exporter-1.9.1.linux-amd64.tar.gz
+
+# Install binary
+sudo install -o root -g root -m 0755 node_exporter-1.9.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
 ```
 
-**Step 3.2: Bind the exporter to localhost**
-
-Set this line in the file, then save (`Ctrl + O`, `Enter`) and exit (`Ctrl + X`):
+# Create systemd service
+```
+sudo vi /etc/systemd/system/node_exporter.service
+```
 
 ```bash
-ARGS="--web.listen-address=127.0.0.1:9100"
+[Unit]
+Description=Prometheus Node Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/usr/local/bin/node_exporter
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target-web.listen-address=127.0.0.1:9100"
 ```
 
 **Step 3.3: Enable, restart and verify**
