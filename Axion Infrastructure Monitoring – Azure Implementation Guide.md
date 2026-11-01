@@ -8,35 +8,27 @@ Stack: Prometheus · Grafana · Node Exporter  |  OS: Ubuntu 24.04 LTS  |  Envir
 
 This guide sets up monitoring for the Linux infrastructure that runs the Axion application. **Prometheus** collects server metrics, **Node Exporter** exposes them from each VM, and **Grafana** displays them in dashboards.
 
-### Architecture
+Prometheus and Grafana are hosted on the frontend VM. Node Exporter runs on both the frontend and backend VMs and exposes host-level metrics such as CPU, memory, filesystem, network and system statistics.
 
-| VM | Private IP | Components |
-| --- | --- | --- |
-| Frontend VM | `10.0.2.4` | React/Nginx, Prometheus, Grafana, Node Exporter |
-| Backend VM | `10.0.4.4` | FastAPI, Node Exporter |
+Prometheus scrapes metrics from both Node Exporter instances. Grafana connects to Prometheus as its data source and provides dashboards for visualization and operational monitoring.
+
+### Architecture
 
 <img width="678" height="318" alt="image" src="https://github.com/user-attachments/assets/baad83c9-954a-4f70-8bd6-d7bb71a141d4" />
 
 
 Prometheus on the frontend VM scrapes both exporters every 15 seconds, and Grafana only ever talks to Prometheus.
 
+| VM | Private IP | Components |
+| --- | --- | --- |
+| Frontend VM | `10.0.2.4` | React/Nginx, Prometheus, Grafana, Node Exporter |
+| Backend VM | `10.0.4.4` | FastAPI, Node Exporter |
+
 ### How it works
 
 1. Node Exporter runs on each VM and exposes Linux system metrics (CPU, memory, disk, network).
 2. Prometheus scrapes both exporters every 15 seconds: the frontend one locally, the backend one over the private VNet.
 3. Grafana queries Prometheus and presents the metrics in dashboards.
-
-### Implementation roadmap
-
-| Step | Task | VM |
-| --- | --- | --- |
-| 1 | Open the required network rules (NSG) | Azure Portal |
-| 2 | Install Node Exporter | Frontend |
-| 3 | Install and configure Prometheus | Frontend |
-| 4 | Install Node Exporter | Backend |
-| 5 | Test private connectivity | Frontend → Backend |
-| 6 | Install Grafana and add the data source | Frontend |
-| 7 | Verify targets and import a dashboard | Grafana / Prometheus |
 
 ## 2. Prerequisites and Network Security
 
